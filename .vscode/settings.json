@@ -1,0 +1,8 @@
+{
+"copilot.exclude": {
+    "**/.env": true,
+    "**/secrets.json": true,
+    "**/node_modules/": true,
+    "**/gen-lang-client-0338546322-620fda3f7817.json": true
+}
+}

@@ -1,11 +1,14 @@
 from google.cloud.speech_v2 import SpeechClient
 from google.cloud.speech_v2.types import cloud_speech
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
 
 def transcribe_audio(gcs_uri: str) -> str:
-    client = SpeechClient()
+    client = SpeechClient(client_options={"quota_project_id": "gen-lang-client-0338546322"})
 
     config = cloud_speech.RecognitionConfig(
         auto_decoding_config=cloud_speech.AutoDetectDecodingConfig(),
