@@ -1,8 +1,11 @@
 import json
 import os
 from google import genai
+from dotenv import load_dotenv
 from google.genai import types
 from prompts import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE
+
+load_dotenv()
 
 def generate_script(transcript: str) -> dict:
     client = genai.Client()

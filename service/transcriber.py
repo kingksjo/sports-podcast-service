@@ -1,4 +1,5 @@
-from google.cloud.speech_v2 import SpeechClient
+from google.cloud.speech_v2 import SpeechClient, RecognitionOutputConfig, InlineOutputConfig
+from google.api_core.client_options import ClientOptions
 from google.cloud.speech_v2.types import cloud_speech
 import os
 from dotenv import load_dotenv
@@ -6,9 +7,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
+MAX_AUDIO_LENGTH_SECS = 8 * 60 * 60
 
 def transcribe_audio(gcs_uri: str) -> str:
-    client = SpeechClient(client_options={"quota_project_id": "gen-lang-client-0338546322"})
+    client = SpeechClient(client_options=ClientOptions(
+          api_endpoint="us-speech.googleapis.com",
+      ),)
 
     config = cloud_speech.RecognitionConfig(
         auto_decoding_config=cloud_speech.AutoDetectDecodingConfig(),
@@ -16,17 +20,28 @@ def transcribe_audio(gcs_uri: str) -> str:
         model="chirp_3",
     )
 
-    request = cloud_speech.RecognizeRequest(
-        recognizer=f"projects/{PROJECT_ID}/locations/global/recognizers/_",
+    files = [cloud_speech.BatchRecognizeFileMetadata(uri=gcs_uri)]
+
+    output_config = RecognitionOutputConfig(
+        inline_response_config=InlineOutputConfig()
+)
+
+    request = cloud_speech.BatchRecognizeRequest(
+        recognizer=f"projects/{PROJECT_ID}/locations/us/recognizers/_",
         config=config,
-        uri=gcs_uri,
+        files=files,
+        recognition_output_config=output_config,
     )
 
-    response = client.recognize(request=request)
+    operation = client.batch_recognize(request=request)
+    print("Waiting for operation to complete...")
+    response = operation.result(timeout=3 * MAX_AUDIO_LENGTH_SECS)
 
-    transcript = " ".join(
-        result.alternatives[0].transcript
-        for result in response.results
-    )
+    transcript_parts = []
 
-    return transcript
+    for result in response.results[gcs_uri].transcript.results:
+         transcript_parts.append(result.alternatives[0].transcript)
+
+
+    full_transcript = " ".join(transcript_parts)
+    return full_transcript
