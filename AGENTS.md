@@ -43,6 +43,7 @@ The following environment variables are required:
 GOOGLE_CLOUD_PROJECT=placeholder
 GC_LOCATION=us-central1
 GOOGLE_CLOUD_LOCATION=global
+GOOGLE_GENAI_USE_VERTEXAI=True
 INPUT_BUCKET=audio-commentary-input-001
 OUTPUT_BUCKET=audio-podcast-output-001
 GOOGLE_APPLICATION_CREDENTIALS=gen-lang-client-0338546322-620fda3f7817.json

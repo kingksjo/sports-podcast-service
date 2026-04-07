@@ -1,0 +1,13 @@
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+.env
+.env.local
+*.json
+.git
+.gitignore
+README.md
+.DS_Store
+*.wav
