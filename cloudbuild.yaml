@@ -4,25 +4,27 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'gcr.io/$PROJECT_ID/sports-podcast-service:$SHORT_SHA'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/sports-podcast-repo/sports-podcast-service:$SHORT_SHA'
       - '-t'
-      - 'gcr.io/$PROJECT_ID/sports-podcast-service:latest'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/sports-podcast-repo/sports-podcast-service:latest'
       - './service'
 
   # Push both tags
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/sports-podcast-service:$SHORT_SHA']
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/sports-podcast-repo/sports-podcast-service:$SHORT_SHA']
 
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/sports-podcast-service:latest']
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/sports-podcast-repo/sports-podcast-service:latest']
 
   # Deploy
-  - name: 'gcr.io/cloud-builders/run'
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
     args:
+      - 'run'
       - 'deploy'
       - 'sports-podcast-service'
       - '--image'
-      - 'gcr.io/$PROJECT_ID/sports-podcast-service:$SHORT_SHA'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/sports-podcast-repo/sports-podcast-service:$SHORT_SHA'
       - '--region'
       - 'us-central1'
       - '--platform'
@@ -36,8 +38,8 @@ steps:
       - 'GOOGLE_CLOUD_PROJECT=$PROJECT_ID,INPUT_BUCKET=audio-commentary-input-001,OUTPUT_BUCKET=audio-podcast-output-001,GOOGLE_GENAI_USE_VERTEXAI=true,GC_LOCATION=us-central1,GOOGLE_CLOUD_LOCATION=global'
 
 images:
-  - 'gcr.io/$PROJECT_ID/sports-podcast-service:$SHORT_SHA'
-  - 'gcr.io/$PROJECT_ID/sports-podcast-service:latest'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/sports-podcast-repo/sports-podcast-service:$SHORT_SHA'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/sports-podcast-repo/sports-podcast-service:latest'
 
 timeout: '1200s'
 
