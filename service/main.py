@@ -30,7 +30,7 @@ async def handle_event(request: Request):
         logger.info(f"Processing file: {blob_name} from bucket: {bucket_name}")
         
         # Idempotency check — skip if already processed
-        if podcast_already_exists(bucket_name, blob_name):
+        if podcast_already_exists(OUTPUT_BUCKET, blob_name):
             logger.info(f"Already processed: {blob_name}, skipping.")
             return {"status": "skipped", "reason": "already processed"}
         
@@ -66,10 +66,13 @@ async def handle_event(request: Request):
         
     except KeyError as e:
         logger.error(f"Missing field in event payload: {e}")
-        raise HTTPException(status_code=400, detail=f"Invalid event payload: {e}")
+        return {"status": "error", "reason": f"Invalid payload: {e}"}  # 200 not 500
+
     except Exception as e:
         logger.error(f"Pipeline error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+            return {"status": "rate_limited", "reason": str(e)}  # 200 — stop retry loop
+        return {"status": "error", "reason": str(e)}  # 200 — everything else too
 
 @app.get("/health")
 def health_check():
