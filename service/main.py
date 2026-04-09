@@ -6,7 +6,7 @@ from fastapi import FastAPI, Request, HTTPException
 from transcriber import transcribe_audio
 from script_synthesis import generate_script
 from podcast_synthesis import produce_audio
-from storage_actions import  upload_podcast
+from storage_actions import upload_podcast, podcast_already_exists, get_output_blob_name
 
 load_dotenv()
 
@@ -29,6 +29,11 @@ async def handle_event(request: Request):
         
         logger.info(f"Processing file: {blob_name} from bucket: {bucket_name}")
         
+        # Idempotency check — skip if already processed
+        if podcast_already_exists(bucket_name, blob_name):
+            logger.info(f"Already processed: {blob_name}, skipping.")
+            return {"status": "skipped", "reason": "already processed"}
+        
         # Step 1 & 2 — construct GCS URI and transcribe directly
         gcs_uri = f"gs://{bucket_name}/{blob_name}"
         transcript = transcribe_audio(gcs_uri)
@@ -47,7 +52,7 @@ async def handle_event(request: Request):
         logger.info("Podcast audio produced")
         
         # Step 5 — upload to output bucket
-        output_blob_name = blob_name.replace(".mp3", "_podcast.wav")
+        output_blob_name = get_output_blob_name(blob_name)
         podcast_url = upload_podcast(OUTPUT_BUCKET, output_blob_name, audio_bytes_out)
         logger.info(f"Podcast uploaded to: {podcast_url}")
         
