@@ -33,7 +33,7 @@ steps:
       - '512Mi'
       - '--timeout'
       - '3600'
-      - '--allow-unauthenticated'
+      - '--no-allow-unauthenticated'
       - '--set-env-vars'
       - 'GOOGLE_CLOUD_PROJECT=$PROJECT_ID,INPUT_BUCKET=audio-commentary-input-001,OUTPUT_BUCKET=audio-podcast-output-001,GOOGLE_GENAI_USE_VERTEXAI=true,GC_LOCATION=us-central1,GOOGLE_CLOUD_LOCATION=global'
 
