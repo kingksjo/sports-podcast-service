@@ -46,7 +46,7 @@ async function generateV4SignedPutUrl(accessToken, bucket, blobName, expiresEpoc
 
   const canonicalRequest = [
     'PUT',
-    `/${bucket}/${blobName}`,
+    `/${bucket}/${encodeURIComponent(blobName)}`,
     `X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=${encodeURIComponent(credential)}&X-Goog-Date=${datetime}&X-Goog-Expires=${expireSeconds}&X-Goog-SignedHeaders=${signedHeaders}`,
     headers,
     signedHeaders,

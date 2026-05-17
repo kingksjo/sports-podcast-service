@@ -76,7 +76,7 @@ async function generateV4SignedGetUrl(accessToken, bucket, blobName) {
 
   const canonicalRequest = [
     'GET',
-    `/${bucket}/${blobName}`,
+    `/${bucket}/${encodeURIComponent(blobName)}`,
     `X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=${encodeURIComponent(credential)}&X-Goog-Date=${datetime}&X-Goog-Expires=${expireSeconds}&X-Goog-SignedHeaders=${signedHeaders}`,
     `host:storage.googleapis.com\n`,
     signedHeaders,
