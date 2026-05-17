@@ -6,7 +6,7 @@ from fastapi import FastAPI, Request, HTTPException
 from transcriber import transcribe_audio
 from script_synthesis import generate_script
 from podcast_synthesis import produce_audio
-from storage_actions import upload_podcast, podcast_already_exists, get_output_blob_name
+from storage_actions import upload_podcast, podcast_already_exists, get_output_blob_name, upload_metadata
 
 load_dotenv()
 
@@ -56,12 +56,22 @@ async def handle_event(request: Request):
         podcast_url = upload_podcast(OUTPUT_BUCKET, output_blob_name, audio_bytes_out)
         logger.info(f"Podcast uploaded to: {podcast_url}")
         
+        # Step 6 — write metadata sidecar
+        metadata = {
+            "sport": sport,
+            "match_title": match_title,
+            "overview": overview
+        }
+        meta_url = upload_metadata(OUTPUT_BUCKET, blob_name, metadata)
+        logger.info(f"Metadata uploaded to: {meta_url}")
+        
         return {
             "status": "success",
             "sport": sport,
             "match_title": match_title,
             "overview": overview,
             "podcast_url": podcast_url,
+            "metadata_url": meta_url
         }
         
     except KeyError as e:
