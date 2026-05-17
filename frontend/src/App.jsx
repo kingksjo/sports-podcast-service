@@ -1,121 +1,105 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import React, { useState, useEffect } from 'react'
+import Layout from './components/Layout'
+import FileDropzone from './components/FileDropzone'
+import ProgressTracker from './components/ProgressTracker'
+import PodcastPlayer from './components/PodcastPlayer'
+import PodcastFeed from './components/PodcastFeed'
+
+const SIMULATION_PHASES = ['UPLOADING', 'TRANSCRIBING', 'SYNTHESIZING', 'READY'];
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [file, setFile] = useState(null);
+  const [phaseIndex, setPhaseIndex] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
+  const [progressValue, setProgressValue] = useState(0);
+  const [logs, setLogs] = useState(['[SYS] Allocating memory blocks... OK']);
+
+  const currentPhase = SIMULATION_PHASES[phaseIndex];
+
+  // Simulation logic
+  useEffect(() => {
+    if (!file || phaseIndex === SIMULATION_PHASES.length - 1) return;
+
+    // Timer
+    const timer = setInterval(() => {
+      setElapsed(prev => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [file, phaseIndex]);
+
+  useEffect(() => {
+    if (!file) return;
+
+    if (currentPhase === 'UPLOADING') {
+      const uploader = setInterval(() => {
+        setProgressValue(prev => {
+          if (prev >= 100) {
+            clearInterval(uploader);
+            setPhaseIndex(1);
+            setLogs(l => [...l, '[SYS] Upload complete. Commencing transcription.']);
+            return 100;
+          }
+          return prev + 10;
+        });
+      }, 300);
+      return () => clearInterval(uploader);
+    } 
+    
+    if (currentPhase === 'TRANSCRIBING') {
+      const transcriber = setTimeout(() => {
+        setPhaseIndex(2);
+        setLogs(l => [...l, '[SYS] Parsing audio stream chunks [1..42]', '[WARN] Frame dropout detected - Recovering...', '> Chunk 43 processing...']);
+      }, 3000);
+      return () => clearTimeout(transcriber);
+    }
+
+    if (currentPhase === 'SYNTHESIZING') {
+      const synthesizer = setTimeout(() => {
+        setPhaseIndex(3); // READY
+        setLogs(l => [...l, '[SYS] Audio synthesized successfully.']);
+      }, 3000);
+      return () => clearTimeout(synthesizer);
+    }
+
+  }, [currentPhase, file]);
+
+  const handleFileAccepted = (acceptedFile) => {
+    setFile(acceptedFile);
+    setPhaseIndex(0);
+    setElapsed(0);
+    setProgressValue(0);
+    setLogs(['[SYS] Allocating memory blocks... OK']);
+  }
+
+  const handleAbort = () => {
+    setFile(null);
+    setPhaseIndex(0);
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+    <Layout footer={<PodcastFeed />}>
+      {!file ? (
+        <FileDropzone onFileAccepted={handleFileAccepted} />
+      ) : currentPhase !== 'READY' ? (
+        <ProgressTracker 
+          currentPhase={currentPhase}
+          logs={logs}
+          elapsed={elapsed}
+          progressValue={progressValue}
+          onAbort={handleAbort}
+        />
+      ) : (
+        <PodcastPlayer 
+          metadata={{
+            sport: 'FORMULA 1',
+            title: 'MONZA GRAND PRIX',
+            overview: 'The 2026 Italian Grand Prix was a Formula One motor race that took place on 6 September 2026 at the Autodromo Nazionale di Monza in Monza, Italy.'
+          }}
+          onReset={handleAbort}
+        />
+      )}
+    </Layout>
   )
 }
 
