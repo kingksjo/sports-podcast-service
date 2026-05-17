@@ -1,83 +1,47 @@
-import { getVercelOidcToken } from '@vercel/oidc';
-import { ExternalAccountClient } from 'google-auth-library';
-import { Storage } from '@google-cloud/storage';
-
-const SIGNED_URL_EXPIRY = 60 * 60; // 1 hour
-
-async function getAuthenticatedStorage() {
-  const oidcToken = await getVercelOidcToken();
-
-  const credConfig = {
-    type: 'external_account',
-    audience: `//iam.googleapis.com/projects/${process.env.GCP_PROJECT_NUMBER}/locations/global/workloadIdentityPools/${process.env.GCP_WORKLOAD_IDENTITY_POOL_ID}/providers/${process.env.GCP_WORKLOAD_IDENTITY_POOL_PROVIDER_ID}`,
-    subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
-    token_url: 'https://sts.googleapis.com/v1/token',
-    service_account_impersonation_url: `https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${process.env.GCP_SERVICE_ACCOUNT_EMAIL}:generateAccessToken`,
-    subject_token_supplier: {
-      getSubjectToken: async () => oidcToken,
-    },
-  };
-
-  const authClient = ExternalAccountClient.fromJSON(credConfig);
-  const { token } = await authClient.getAccessToken();
-
-  const storage = new Storage({
-    projectId: process.env.GCP_PROJECT_ID,
-    authClient: {
-      // Duck-type a minimal auth object that Storage accepts
-      getRequestHeaders: async () => ({ Authorization: `Bearer ${token}` }),
-      getAccessToken: async () => ({ token }),
-    },
-  });
-
-  return storage;
-}
+import { getGcpAccessToken } from './_gcp-auth.js';
 
 function getOutputBlobName(inputBlobName) {
   return inputBlobName.replace('.mp3', '_podcast.wav');
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   const { filename } = req.query;
-
-  if (!filename) {
-    return res.status(400).json({ error: 'filename is required' });
-  }
+  if (!filename) return res.status(400).json({ error: 'filename is required' });
 
   try {
-    const storage = await getAuthenticatedStorage();
-
+    const token = await getGcpAccessToken();
     const outputBlobName = getOutputBlobName(filename);
-    const bucket = storage.bucket(process.env.OUTPUT_BUCKET);
-    const file = bucket.file(outputBlobName);
+    const bucket = process.env.OUTPUT_BUCKET;
 
-    const [exists] = await file.exists();
+    // Check if output file exists via GCS JSON API
+    const checkRes = await fetch(
+      `https://storage.googleapis.com/storage/v1/b/${bucket}/o/${encodeURIComponent(outputBlobName)}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-    if (!exists) {
+    if (checkRes.status === 404) {
       return res.status(200).json({ status: 'processing' });
     }
 
-    // Check for metadata sidecar (optional — if you added it to Cloud Run)
-    let metadata = null;
-    try {
-      const metaFile = bucket.file(outputBlobName.replace('_podcast.wav', '_podcast_meta.json'));
-      const [metaExists] = await metaFile.exists();
-      if (metaExists) {
-        const [contents] = await metaFile.download();
-        metadata = JSON.parse(contents.toString());
-      }
-    } catch (_) {
-      // metadata is optional, silently skip
+    if (!checkRes.ok) {
+      throw new Error(`GCS check failed: ${checkRes.status}`);
     }
 
-    const [podcastUrl] = await file.generateSignedUrl({
-      action: 'read',
-      expires: Date.now() + SIGNED_URL_EXPIRY * 1000,
-    });
+    // Try metadata sidecar
+    let metadata = null;
+    const metaBlobName = outputBlobName.replace('_podcast.wav', '_podcast_meta.json');
+    const metaRes = await fetch(
+      `https://storage.googleapis.com/storage/v1/b/${bucket}/o/${encodeURIComponent(metaBlobName)}?alt=media`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (metaRes.ok) {
+      metadata = await metaRes.json();
+    }
+
+    // Generate signed GET URL for audio
+    const podcastUrl = await generateV4SignedGetUrl(token, bucket, outputBlobName);
 
     return res.status(200).json({
       status: 'ready',
@@ -90,6 +54,62 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     console.error('status error:', err);
-    return res.status(500).json({ error: 'Failed to check status' });
+    return res.status(500).json({ error: err.message });
   }
+}
+
+async function generateV4SignedGetUrl(accessToken, bucket, blobName) {
+  const SA = process.env.GCP_SERVICE_ACCOUNT_EMAIL;
+  const now = new Date();
+  const datestamp = now.toISOString().slice(0, 10).replace(/-/g, '');
+  const datetime = now.toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z';
+  const expireSeconds = 3600; // 1 hour
+
+  const credentialScope = `${datestamp}/auto/storage/goog4_request`;
+  const credential = `${SA}/${credentialScope}`;
+  const signedHeaders = 'host';
+
+  const canonicalRequest = [
+    'GET',
+    `/${bucket}/${blobName}`,
+    `X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=${encodeURIComponent(credential)}&X-Goog-Date=${datetime}&X-Goog-Expires=${expireSeconds}&X-Goog-SignedHeaders=${signedHeaders}`,
+    `host:storage.googleapis.com\n`,
+    signedHeaders,
+    'UNSIGNED-PAYLOAD',
+  ].join('\n');
+
+  const crypto = await import('crypto');
+  const hashedRequest = crypto.createHash('sha256').update(canonicalRequest).digest('hex');
+
+  const stringToSign = [
+    'GOOG4-RSA-SHA256',
+    datetime,
+    credentialScope,
+    hashedRequest,
+  ].join('\n');
+
+  const signResponse = await fetch(
+    `https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${SA}:signBlob`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ payload: Buffer.from(stringToSign).toString('base64') }),
+    }
+  );
+
+  const { signedBlob } = await signResponse.json();
+  const signature = Buffer.from(signedBlob, 'base64').toString('hex');
+
+  return (
+    `https://storage.googleapis.com/${bucket}/${encodeURIComponent(blobName)}` +
+    `?X-Goog-Algorithm=GOOG4-RSA-SHA256` +
+    `&X-Goog-Credential=${encodeURIComponent(credential)}` +
+    `&X-Goog-Date=${datetime}` +
+    `&X-Goog-Expires=${expireSeconds}` +
+    `&X-Goog-SignedHeaders=${signedHeaders}` +
+    `&X-Goog-Signature=${signature}`
+  );
 }
