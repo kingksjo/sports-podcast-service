@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-export default function PodcastFeed() {
+export default function PodcastFeed({ onMaximize }) {
   const [playingId, setPlayingId] = useState(null);
   const [podcasts, setPodcasts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -54,6 +54,7 @@ export default function PodcastFeed() {
               podcast={podcast} 
               isPlaying={playingId === podcast.blobName}
               onPlayToggle={(playing) => setPlayingId(playing ? podcast.blobName : null)}
+              onMaximize={() => onMaximize && onMaximize(podcast)}
             />
           ))}
         </div>
@@ -62,7 +63,7 @@ export default function PodcastFeed() {
   );
 }
 
-function FeedCard({ podcast, isPlaying, onPlayToggle }) {
+function FeedCard({ podcast, isPlaying, onPlayToggle, onMaximize }) {
   const audioRef = useRef(null);
 
   useEffect(() => {
@@ -103,14 +104,23 @@ function FeedCard({ podcast, isPlaying, onPlayToggle }) {
           </p>
         </div>
 
-        <a 
-          href={podcast.podcastUrl} 
-          download 
-          className="shrink-0 w-full sm:w-auto border border-outline-variant bg-surface-container hover:border-primary hover:text-primary text-on-surface-variant px-3 py-2 font-label-caps text-label-caps uppercase transition-colors flex items-center justify-center gap-1"
-          title="Download .WAV"
-        >
-          <span className="material-symbols-outlined text-[16px]">download</span>
-        </a>
+        <div className="flex gap-2 w-full sm:w-auto shrink-0">
+          <button 
+            onClick={onMaximize}
+            className="flex-1 sm:flex-none border border-outline-variant bg-surface-container hover:border-primary hover:text-primary text-on-surface-variant px-3 py-2 font-label-caps text-label-caps uppercase transition-colors flex items-center justify-center gap-1"
+            title="Maximize Player"
+          >
+            <span className="material-symbols-outlined text-[16px]">open_in_full</span>
+          </button>
+          <a 
+            href={podcast.podcastUrl} 
+            download 
+            className="shrink-0 w-full sm:w-auto border border-outline-variant bg-surface-container hover:border-primary hover:text-primary text-on-surface-variant px-3 py-2 font-label-caps text-label-caps uppercase transition-colors flex items-center justify-center gap-1"
+            title="Download .WAV"
+          >
+            <span className="material-symbols-outlined text-[16px]">download</span>
+          </a>
+        </div>
       </div>
 
       <audio ref={audioRef} src={podcast.podcastUrl} className="hidden" preload="none" onEnded={() => onPlayToggle(false)} />

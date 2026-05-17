@@ -157,27 +157,36 @@ function App() {
     setPodcastData(null);
   }
 
+  const handleMaximizePodcast = (podcast) => {
+    if (xhrRef.current) xhrRef.current.abort();
+    setFile(null); 
+    setBlobName(null); // Stop polling if active
+    setPhaseIndex(3); // READY
+    setPodcastData(podcast);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   return (
-    <Layout footer={<PodcastFeed />}>
-      {!file ? (
+    <Layout footer={<PodcastFeed onMaximize={handleMaximizePodcast} />}>
+      {podcastData && currentPhase === 'READY' ? (
+        <PodcastPlayer 
+          audioUrl={podcastData.podcastUrl}
+          metadata={{
+            sport: podcastData.sport,
+            title: podcastData.match_title,
+            overview: podcastData.overview
+          }}
+          onReset={handleAbort}
+        />
+      ) : !file ? (
         <FileDropzone onFileAccepted={handleFileAccepted} />
-      ) : currentPhase !== 'READY' ? (
+      ) : (
         <ProgressTracker 
           currentPhase={currentPhase}
           logs={logs}
           elapsed={elapsed}
           progressValue={progressValue}
           onAbort={handleAbort}
-        />
-      ) : (
-        <PodcastPlayer 
-          audioUrl={podcastData?.podcastUrl}
-          metadata={{
-            sport: podcastData?.sport,
-            title: podcastData?.match_title,
-            overview: podcastData?.overview
-          }}
-          onReset={handleAbort}
         />
       )}
     </Layout>
