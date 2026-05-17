@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AloSphere - Processing</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "outline-variant": "#524534",
+                        "primary-container": "#f5a623",
+                        "surface-container-lowest": "#130d06",
+                        "on-primary-fixed": "#291800",
+                        "background": "#19120a",
+                        "on-secondary-fixed-variant": "#0c5300",
+                        "primary-fixed": "#ffddb4",
+                        "on-tertiary": "#00344a",
+                        "tertiary-fixed": "#c4e7ff",
+                        "tertiary-container": "#3ac2ff",
+                        "secondary-fixed-dim": "#34e507",
+                        "on-tertiary-fixed": "#001e2c",
+                        "on-primary": "#452b00",
+                        "on-tertiary-fixed-variant": "#004c69",
+                        "secondary-fixed": "#79ff59",
+                        "surface-tint": "#ffb955",
+                        "inverse-primary": "#835500",
+                        "on-primary-container": "#644000",
+                        "inverse-on-surface": "#372f26",
+                        "on-secondary-fixed": "#022100",
+                        "on-error": "#690005",
+                        "on-secondary": "#063900",
+                        "on-secondary-container": "#0f5e00",
+                        "outline": "#9f8e7a",
+                        "on-tertiary-container": "#004d6a",
+                        "secondary-container": "#30e200",
+                        "surface-bright": "#40382e",
+                        "on-background": "#eee0d2",
+                        "surface-container-high": "#302920",
+                        "tertiary-fixed-dim": "#7cd0ff",
+                        "primary": "#ffc880",
+                        "surface-container": "#251e16",
+                        "surface": "#19120a",
+                        "on-error-container": "#ffdad6",
+                        "on-primary-fixed-variant": "#633f00",
+                        "surface-dim": "#19120a",
+                        "error-container": "#93000a",
+                        "error": "#ffb4ab",
+                        "surface-container-highest": "#3c332a",
+                        "inverse-surface": "#eee0d2",
+                        "surface-variant": "#3c332a",
+                        "on-surface-variant": "#d7c3ae",
+                        "surface-container-low": "#211a12",
+                        "secondary": "#5dff3b",
+                        "on-surface": "#eee0d2",
+                        "primary-fixed-dim": "#ffb955",
+                        "tertiary": "#9bd9ff"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "container-max": "1280px",
+                        "gutter": "16px",
+                        "unit": "8px",
+                        "margin": "24px"
+                    },
+                    fontFamily: {
+                        "headline-md": ["JetBrains Mono"],
+                        "status-code": ["JetBrains Mono"],
+                        "label-caps": ["JetBrains Mono"],
+                        "display-lg": ["JetBrains Mono"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["JetBrains Mono"],
+                        "body-md": ["Inter"]
+                    },
+                    fontSize: {
+                        "headline-md": ["24px", { "lineHeight": "1.2", "fontWeight": "600" }],
+                        "status-code": ["14px", { "lineHeight": "1.4", "fontWeight": "500" }],
+                        "label-caps": ["12px", { "lineHeight": "1.0", "letterSpacing": "0.1em", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "1.5", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .blink-cursor {
+            animation: blink 1s step-end infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col antialiased selection:bg-secondary selection:text-on-secondary">
+<!-- Suppressed Shell: Linear/Transactional Intent (Processing Screen) -->
+<main class="flex-1 flex flex-col justify-center items-center p-gutter md:p-margin">
+<div class="w-full max-w-3xl border border-outline-variant bg-surface-container flex flex-col">
+<!-- Header -->
+<div class="flex items-center justify-between p-gutter border-b border-outline-variant bg-surface-container-high">
+<div class="flex items-center gap-unit">
+<span class="material-symbols-outlined text-secondary">memory</span>
+<h1 class="font-headline-md text-headline-md text-primary uppercase">AloSphere Kernel</h1>
+</div>
+<div class="font-status-code text-status-code text-on-surface-variant">
+                    PID: 8492
+                </div>
+</div>
+<!-- Content Area -->
+<div class="p-margin flex flex-col gap-margin">
+<!-- Status Prompt -->
+<div class="font-status-code text-status-code flex items-center gap-unit">
+<span class="text-primary">&gt;</span>
+<span class="text-on-surface">STATUS: TRANSCRIBING_PIPELINE_ACTIVE</span>
+<span class="w-2 h-4 bg-secondary inline-block blink-cursor"></span>
+</div>
+<!-- Phase Sequence -->
+<div class="border border-outline-variant p-gutter bg-surface-container-lowest flex flex-wrap gap-unit items-center font-label-caps text-label-caps">
+<span class="text-on-surface-variant">UPLOADING</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[16px]">arrow_right_alt</span>
+<span class="text-secondary bg-on-secondary-fixed-variant px-2 py-1 border border-secondary">[TRANSCRIBING]</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[16px]">arrow_right_alt</span>
+<span class="text-outline">SYNTHESIZING</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[16px]">arrow_right_alt</span>
+<span class="text-outline">READY</span>
+</div>
+<!-- Progress Details -->
+<div class="flex flex-col gap-unit">
+<div class="flex justify-between items-end">
+<div class="font-label-caps text-label-caps text-on-surface-variant">
+                            DATA_STREAM: 45.2MB / 128.0MB
+                        </div>
+<div class="font-status-code text-status-code text-primary">
+                            ELAPSED: 01:42
+                        </div>
+</div>
+<!-- Hard-edged Progress Bar -->
+<div class="h-2 w-full border border-outline-variant bg-background flex">
+<div class="bg-secondary h-full w-[45%] border-r border-background"></div>
+</div>
+</div>
+<!-- Terminal Log (Decorative) -->
+<div class="border border-outline-variant h-32 overflow-hidden bg-background p-unit font-status-code text-status-code text-[12px] leading-tight flex flex-col justify-end text-on-surface-variant opacity-70 relative">
+<div class="absolute top-0 right-0 p-1 border-b border-l border-outline-variant bg-surface-container">
+<span class="font-label-caps text-label-caps text-[10px]">LOG_OUTPUT</span>
+</div>
+<div>[SYS] Allocating memory blocks... OK</div>
+<div>[SYS] Initializing NLP models... OK</div>
+<div>[SYS] Parsing audio stream chunks [1..42]</div>
+<div>[WARN] Frame dropout detected at 00:00:15 - Recovering...</div>
+<div class="text-secondary">&gt; Chunk 43 processing...</div>
+</div>
+</div>
+<!-- Footer Actions (Disabled during processing) -->
+<div class="p-gutter border-t border-outline-variant bg-surface flex justify-end gap-unit">
+<button class="border border-outline-variant bg-surface-container-lowest text-outline px-4 py-2 font-label-caps text-label-caps cursor-not-allowed uppercase" disabled="">
+                    Abort Process
+                </button>
+</div>
+</div>
+</main>
+</body></html>
