@@ -1,141 +1,16 @@
-# Sports Podcast Frontend
+# React + Vite
 
-React + Vite frontend for the Sports Podcast Generator service.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## Features
+Currently, two official plugins are available:
 
-- **File Upload**: Drag-and-drop audio files for processing
-- **Real-time Progress**: Visual progress tracker for the entire pipeline
-- **Status Polling**: Polls backend for processing status
-- **Audio Player**: Built-in player to listen to generated podcasts
-- **Responsive Design**: Works on desktop and mobile devices
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-## Project Structure
+## React Compiler
 
-```
-frontend/
-├── api/
-│   ├── upload-url.js       # Generate signed URLs for GCS upload
-│   └── status.js           # Check processing status
-├── src/
-│   ├── components/
-│   │   ├── FileDropzone.jsx     # Drag-drop file input
-│   │   ├── ProgressTracker.jsx  # Visual progress stages
-│   │   ├── PodcastPlayer.jsx    # Audio player
-│   │   └── StatusBadge.jsx      # Status indicator
-│   ├── hooks/
-│   │   ├── useUpload.js    # Handle file upload to GCS
-│   │   └── usePolling.js   # Poll processing status
-│   ├── App.jsx
-│   ├── main.jsx
-│   └── index.css
-├── package.json
-├── vite.config.js
-└── vercel.json
-```
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-## Getting Started
+## Expanding the ESLint configuration
 
-### Prerequisites
-
-- Node.js 16+
-- npm or yarn
-
-### Installation
-
-```bash
-cd frontend
-npm install
-```
-
-### Development
-
-```bash
-npm run dev
-```
-
-Server runs on `http://localhost:3000`
-
-### Build
-
-```bash
-npm run build
-```
-
-Output goes to `dist/` directory.
-
-## Environment Variables
-
-Create a `.env.local` file:
-
-```env
-VITE_BACKEND_URL=http://localhost:8000
-```
-
-## API Integration
-
-### Upload Flow
-
-1. **Get Signed URL** → `POST /api/upload-url`
-   - Returns: `{ signedUrl, gcsUri }`
-2. **Upload to GCS** → `PUT {signedUrl}`
-   - File uploaded directly to Cloud Storage
-3. **Start Polling** → `GET /api/status?gcsUri={uri}`
-   - Polls until processing completes
-
-### Backend Requirements
-
-Your backend needs these endpoints:
-
-```
-POST /generate-signed-url
-  Body: { filename, contentType }
-  Returns: { signedUrl, gcsUri }
-
-GET /status?gcsUri=...
-  Returns: { 
-    status: "processing|complete|error",
-    sport?: "...",
-    match_title?: "...",
-    overview?: "...",
-    podcast_url?: "...",
-    message?: "..."
-  }
-```
-
-## Deployment to Vercel
-
-1. **Push to GitHub**
-   ```bash
-   git push origin main
-   ```
-
-2. **Connect to Vercel**
-   - Import your repo at vercel.com
-   - Set `REACT_APP_BACKEND_URL` environment variable
-   - Deploy!
-
-## Customization
-
-### Styling
-
-All components have `.css` files. Modify colors in:
-- `src/App.css` - Main theme (gradient: #667eea → #764ba2)
-- `src/components/*.css` - Component-specific styles
-
-### Polling Interval
-
-Edit `usePolling.js` line with `setInterval(poll, 2000)` to change from 2s.
-
-### Upload Validation
-
-Edit `FileDropzone.jsx` to add file size checks or format restrictions.
-
-## Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| CORS errors | Ensure backend sends `Access-Control-Allow-Origin: *` |
-| Upload fails | Check signed URL generation and GCS bucket permissions |
-| Status polling times out | Increase polling interval or backend timeout |
-| Files not uploading to GCS | Verify signed URLs are valid and not expired |
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
