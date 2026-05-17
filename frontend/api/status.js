@@ -17,17 +17,22 @@ export default async function handler(req, res) {
 
     // Check if output file exists via GCS JSON API
     const checkRes = await fetch(
-      `https://storage.googleapis.com/storage/v1/b/${bucket}/o/${encodeURIComponent(outputBlobName)}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+  `https://storage.googleapis.com/storage/v1/b/${bucket}/o/${encodeURIComponent(outputBlobName)}`,
+  { headers: { Authorization: `Bearer ${token}` } }
+  );
 
-    if (checkRes.status === 404) {
-      return res.status(200).json({ status: 'processing' });
-    }
+  console.log('Token prefix:', token?.slice(0, 10));
+  console.log('GCS status:', checkRes.status);
+  const responseText = await checkRes.text();
+  console.log('GCS response body:', responseText);
 
-    if (!checkRes.ok) {
-      throw new Error(`GCS check failed: ${checkRes.status}`);
-    }
+  if (checkRes.status === 404) {
+    return res.status(200).json({ status: 'processing' });
+  }
+
+  if (!checkRes.ok) {
+    throw new Error(`GCS check failed: ${checkRes.status} — ${responseText}`);
+  }
 
     // Try metadata sidecar
     let metadata = null;
