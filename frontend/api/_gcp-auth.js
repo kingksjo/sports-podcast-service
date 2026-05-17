@@ -13,6 +13,7 @@ export async function getGcpAccessToken() {
     subject_token_supplier: {
       getSubjectToken: async () => oidcToken,
     },
+    scopes: ['https://www.googleapis.com/auth/cloud-platform'], 
   };
 
   const authClient = ExternalAccountClient.fromJSON(credConfig);
