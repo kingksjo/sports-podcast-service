@@ -6,17 +6,33 @@ import { randomUUID } from 'crypto';
 const ALLOWED_EXTENSIONS = ['.mp3'];
 const SIGNED_URL_EXPIRY = 15 * 60; // 15 minutes in seconds
 
-function getGcpCredentials() {
-  return {
+async function getAuthenticatedStorage() {
+  const oidcToken = await getVercelOidcToken();
+
+  const credConfig = {
     type: 'external_account',
     audience: `//iam.googleapis.com/projects/${process.env.GCP_PROJECT_NUMBER}/locations/global/workloadIdentityPools/${process.env.GCP_WORKLOAD_IDENTITY_POOL_ID}/providers/${process.env.GCP_WORKLOAD_IDENTITY_POOL_PROVIDER_ID}`,
     subject_token_type: 'urn:ietf:params:oauth:token-type:id_token',
     token_url: 'https://sts.googleapis.com/v1/token',
     service_account_impersonation_url: `https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${process.env.GCP_SERVICE_ACCOUNT_EMAIL}:generateAccessToken`,
     subject_token_supplier: {
-      getSubjectToken: () => getVercelOidcToken(),
+      getSubjectToken: async () => oidcToken,
     },
   };
+
+  const authClient = ExternalAccountClient.fromJSON(credConfig);
+  const { token } = await authClient.getAccessToken();
+
+  const storage = new Storage({
+    projectId: process.env.GCP_PROJECT_ID,
+    authClient: {
+      // Duck-type a minimal auth object that Storage accepts
+      getRequestHeaders: async () => ({ Authorization: `Bearer ${token}` }),
+      getAccessToken: async () => ({ token }),
+    },
+  });
+
+  return storage;
 }
 
 export default async function handler(req, res) {
@@ -36,8 +52,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const authClient = ExternalAccountClient.fromJSON(getGcpCredentials());
-    const storage = new Storage({ authClient, projectId: process.env.GCP_PROJECT_ID });
+    const storage = await getAuthenticatedStorage();
 
     const blobName = `${randomUUID()}-${filename}`;
     const bucket = storage.bucket(process.env.INPUT_BUCKET);
